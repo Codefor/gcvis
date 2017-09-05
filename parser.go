@@ -2,9 +2,12 @@ package main
 
 import (
 	"bufio"
+	"fmt"
 	"io"
+	"os"
 	"regexp"
 	"strconv"
+	"time"
 )
 
 const (
@@ -47,7 +50,16 @@ func NewParser(r io.Reader) *Parser {
 func (p *Parser) Run() {
 	sc := bufio.NewScanner(p.reader)
 
-	for sc.Scan() {
+	var hasMore bool
+	for {
+		//TODO how to exit?
+		hasMore = sc.Scan()
+		if !hasMore {
+			fmt.Fprintln(os.Stderr, "no more data, wait for 1 second")
+			time.Sleep(time.Second)
+			continue
+		}
+
 		line := sc.Text()
 		if result := gcrego16.FindStringSubmatch(line); result != nil {
 			p.GcChan <- parseGCTrace(gcrego16, result)

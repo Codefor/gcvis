@@ -13,19 +13,15 @@ import (
 	"log"
 	"os"
 	"strings"
-
-	"github.com/pkg/browser"
-
-	"golang.org/x/crypto/ssh/terminal"
 )
 
-var iface = flag.String("i", "127.0.0.1", "specify interface to use. defaults to 127.0.0.1.")
-var port = flag.String("p", "0", "specify port to use.")
-var openBrowser = flag.Bool("o", true, "automatically open browser")
+var iface = flag.String("i", "", "specify interface to use. defaults to all.")
+var port = flag.Int("p", 12345, "specify port to use.")
+var w = flag.Bool("wait", false, "force to wait")
 
 func main() {
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Usage of %s: command <args>...\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "Usage :\n %s <args> your_go_program <your args>...\n or \n cat gogc.log|%s -wait=True\n\n", os.Args[0], os.Args[0])
 		flag.PrintDefaults()
 	}
 
@@ -34,12 +30,7 @@ func main() {
 
 	flag.Parse()
 	if len(flag.Args()) < 1 {
-		if terminal.IsTerminal(int(os.Stdin.Fd())) {
-			flag.Usage()
-			return
-		} else {
-			pipeRead = os.Stdin
-		}
+		pipeRead = os.Stdin
 	} else {
 		subcommand = NewSubCommand(flag.Args())
 		pipeRead = subcommand.PipeRead
@@ -50,7 +41,7 @@ func main() {
 
 	title := strings.Join(flag.Args(), " ")
 	if len(title) == 0 {
-		title = fmt.Sprintf("%s:%s", *iface, *port)
+		title = fmt.Sprintf("%s:%d", *iface, *port)
 	}
 
 	gcvisGraph := NewGraph(title, GCVIS_TMPL)
@@ -61,12 +52,7 @@ func main() {
 
 	url := server.Url()
 
-	if *openBrowser {
-		log.Printf("opening browser window, if this fails, navigate to %s", url)
-		browser.OpenURL(url)
-	} else {
-		log.Printf("server started on %s", url)
-	}
+	log.Printf("server started on %s", url)
 
 	for {
 		select {
@@ -82,6 +68,7 @@ func main() {
 				os.Exit(1)
 			}
 
+			fmt.Fprintln(os.Stderr, "parser done")
 			os.Exit(0)
 		}
 	}
@@ -91,5 +78,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	os.Exit(0)
+	if *w {
+		fmt.Fprintf(os.Stderr, "force to wait...")
+		var c chan bool
+		<-c
+	}
 }

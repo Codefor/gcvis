@@ -14,12 +14,12 @@ type HttpServer struct {
 	graph    *Graph
 	listener net.Listener
 	iface    string
-	port     string
+	port     int
 
 	listenerMtx sync.Mutex
 }
 
-func NewHttpServer(iface string, port string, graph *Graph) *HttpServer {
+func NewHttpServer(iface string, port int, graph *Graph) *HttpServer {
 	h := &HttpServer{
 		graph: graph,
 		iface: iface,
